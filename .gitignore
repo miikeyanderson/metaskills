@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# Node modules (if using any JS tooling)
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+# Environment variables
+.env
+.env.local
