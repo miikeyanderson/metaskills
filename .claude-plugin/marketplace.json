@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    {
+      "name": "metaskills",
+      "description": "Skills for productivity, TDD, task management, and workflow automation",
+      "url": "https://github.com/miikeyanderson/metaskills"
+    }
+  ]
+}
