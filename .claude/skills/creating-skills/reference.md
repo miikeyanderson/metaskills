@@ -38,9 +38,9 @@ All frontmatter fields are **optional** unless marked as recommended. Fields sho
 
 - **Type**: String
 - **Required**: **Recommended** (critical for automatic invocation)
-- **Description**: What the skill does and when to use it. Claude uses this to decide when to apply the skill automatically. If omitted, uses the first paragraph of markdown content.
-- **Best Practice**: Include keywords users would naturally say and specific use cases
-- **Example**: `description: Explains code with visual diagrams and analogies. Use when explaining how code works, teaching about a codebase, or when the user asks "how does this work?"`
+- **Description**: When to use this skill. Claude uses this to decide when to apply the skill automatically. If omitted, uses the first paragraph of markdown content.
+- **Best Practice**: Start with "Use when..." and include triggering conditions. Do NOT summarize workflow—Claude may follow the description instead of reading the full skill.
+- **Example**: `description: Use when explaining how code works, teaching about a codebase, or when the user asks "how does this work?"`
 
 ### `argument-hint`
 
