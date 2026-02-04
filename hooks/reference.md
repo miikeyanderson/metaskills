@@ -32,13 +32,35 @@ Hooks are defined in JSON settings files with this structure:
 
 Where you define a hook determines its scope:
 
-| Location | Path | Applies to | Shareable |
-|----------|------|------------|-----------|
-| Personal | `~/.claude/settings.json` | All your projects | No |
-| Project | `.claude/settings.json` | Single project | Yes, commit to repo |
-| Local | `.claude/settings.local.json` | Single project | No, gitignored |
-| Plugin | `<plugin>/hooks/hooks.json` | When plugin enabled | Yes |
-| Skill/Agent | YAML frontmatter | While component active | Yes |
+### Personal
+
+- **Path**: `~/.claude/settings.json`
+- **Applies to**: All your projects
+- **Shareable**: No
+
+### Project
+
+- **Path**: `.claude/settings.json`
+- **Applies to**: Single project
+- **Shareable**: Yes, commit to repo
+
+### Local
+
+- **Path**: `.claude/settings.local.json`
+- **Applies to**: Single project
+- **Shareable**: No, gitignored
+
+### Plugin
+
+- **Path**: `<plugin>/hooks/hooks.json`
+- **Applies to**: When plugin enabled
+- **Shareable**: Yes
+
+### Skill/Agent
+
+- **Path**: YAML frontmatter
+- **Applies to**: While component active
+- **Shareable**: Yes
 
 **Priority**: Hooks from all locations merge and run in parallel.
 
@@ -48,20 +70,65 @@ Where you define a hook determines its scope:
 
 All available hook events and when they fire:
 
-| Event | When it fires | Can block? |
-|-------|---------------|------------|
-| `SessionStart` | Session begins or resumes | No |
-| `UserPromptSubmit` | User submits prompt, before processing | Yes |
-| `PreToolUse` | Before a tool call executes | Yes |
-| `PermissionRequest` | Permission dialog appears | Yes |
-| `PostToolUse` | After a tool call succeeds | No |
-| `PostToolUseFailure` | After a tool call fails | No |
-| `Notification` | Claude Code sends a notification | No |
-| `SubagentStart` | Subagent is spawned | No |
-| `SubagentStop` | Subagent finishes | Yes |
-| `Stop` | Claude finishes responding | Yes |
-| `PreCompact` | Before context compaction | No |
-| `SessionEnd` | Session terminates | No |
+### SessionStart
+
+- **When**: Session begins or resumes
+- **Can block**: No
+
+### UserPromptSubmit
+
+- **When**: User submits prompt, before processing
+- **Can block**: Yes
+
+### PreToolUse
+
+- **When**: Before a tool call executes
+- **Can block**: Yes
+
+### PermissionRequest
+
+- **When**: Permission dialog appears
+- **Can block**: Yes
+
+### PostToolUse
+
+- **When**: After a tool call succeeds
+- **Can block**: No
+
+### PostToolUseFailure
+
+- **When**: After a tool call fails
+- **Can block**: No
+
+### Notification
+
+- **When**: Claude Code sends a notification
+- **Can block**: No
+
+### SubagentStart
+
+- **When**: Subagent is spawned
+- **Can block**: No
+
+### SubagentStop
+
+- **When**: Subagent finishes
+- **Can block**: Yes
+
+### Stop
+
+- **When**: Claude finishes responding
+- **Can block**: Yes
+
+### PreCompact
+
+- **When**: Before context compaction
+- **Can block**: No
+
+### SessionEnd
+
+- **When**: Session terminates
+- **Can block**: No
 
 ---
 
@@ -69,17 +136,63 @@ All available hook events and when they fire:
 
 The `matcher` field is a regex that filters when hooks fire. Omit or use `"*"` to match all.
 
-| Event | What matcher filters | Example values |
-|-------|---------------------|----------------|
-| `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` | Tool name | `Bash`, `Edit\|Write`, `mcp__.*` |
-| `SessionStart` | How session started | `startup`, `resume`, `clear`, `compact` |
-| `SessionEnd` | Why session ended | `clear`, `logout`, `prompt_input_exit`, `bypass_permissions_disabled`, `other` |
-| `Notification` | Notification type | `permission_prompt`, `idle_prompt`, `auth_success`, `elicitation_dialog` |
-| `SubagentStart`, `SubagentStop` | Agent type | `Bash`, `Explore`, `Plan`, custom names |
-| `PreCompact` | Compaction trigger | `manual`, `auto` |
-| `UserPromptSubmit`, `Stop` | No matcher support | Always fires |
+### PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest
 
-**Tool names for matching**: `Bash`, `Edit`, `Write`, `Read`, `Glob`, `Grep`, `Task`, `WebFetch`, `WebSearch`, `mcp__<server>__<tool>`
+Matches on **tool name**:
+- `Bash` - shell commands
+- `Edit` - file edits
+- `Write` - file creation
+- `Read` - file reading
+- `Glob` - file pattern matching
+- `Grep` - content search
+- `Task` - subagent spawning
+- `WebFetch` - URL fetching
+- `WebSearch` - web search
+- `mcp__<server>__<tool>` - MCP tools (e.g., `mcp__memory__.*`)
+- `Edit|Write` - regex to match multiple tools
+
+### SessionStart
+
+Matches on **how session started**:
+- `startup` - new session
+- `resume` - `--resume`, `--continue`, or `/resume`
+- `clear` - `/clear` command
+- `compact` - auto or manual compaction
+
+### SessionEnd
+
+Matches on **why session ended**:
+- `clear` - session cleared with `/clear`
+- `logout` - user logged out
+- `prompt_input_exit` - user exited while prompt visible
+- `bypass_permissions_disabled` - bypass permissions mode disabled
+- `other` - other exit reasons
+
+### Notification
+
+Matches on **notification type**:
+- `permission_prompt` - permission dialog shown
+- `idle_prompt` - idle notification
+- `auth_success` - authentication succeeded
+- `elicitation_dialog` - elicitation dialog shown
+
+### SubagentStart, SubagentStop
+
+Matches on **agent type**:
+- `Bash` - bash agent
+- `Explore` - exploration agent
+- `Plan` - planning agent
+- Custom agent names from `.claude/agents/`
+
+### PreCompact
+
+Matches on **compaction trigger**:
+- `manual` - `/compact` command
+- `auto` - automatic context compaction
+
+### UserPromptSubmit, Stop
+
+**No matcher support** - always fires on every occurrence.
 
 ---
 
@@ -87,26 +200,61 @@ The `matcher` field is a regex that filters when hooks fire. Omit or use `"*"` t
 
 ### Common Fields (All Types)
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `type` | String | Yes | - | `"command"`, `"prompt"`, or `"agent"` |
-| `timeout` | Number | No | 600/30/60 | Seconds before canceling (command/prompt/agent) |
-| `statusMessage` | String | No | - | Custom spinner message while running |
-| `once` | Boolean | No | `false` | Run only once per session (skills only) |
+#### `type`
+
+- **Type**: String
+- **Required**: Yes
+- **Values**: `"command"`, `"prompt"`, or `"agent"`
+
+#### `timeout`
+
+- **Type**: Number
+- **Required**: No
+- **Default**: 600 (command), 30 (prompt), 60 (agent)
+- **Description**: Seconds before canceling
+
+#### `statusMessage`
+
+- **Type**: String
+- **Required**: No
+- **Description**: Custom spinner message while running
+
+#### `once`
+
+- **Type**: Boolean
+- **Required**: No
+- **Default**: `false`
+- **Description**: Run only once per session (skills only)
 
 ### Command Hook Fields
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `command` | String | Yes | - | Shell command to execute |
-| `async` | Boolean | No | `false` | Run in background without blocking |
+#### `command`
+
+- **Type**: String
+- **Required**: Yes
+- **Description**: Shell command to execute
+
+#### `async`
+
+- **Type**: Boolean
+- **Required**: No
+- **Default**: `false`
+- **Description**: Run in background without blocking
 
 ### Prompt/Agent Hook Fields
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `prompt` | String | Yes | - | Prompt text. Use `$ARGUMENTS` for hook input JSON |
-| `model` | String | No | haiku | Model to use for evaluation |
+#### `prompt`
+
+- **Type**: String
+- **Required**: Yes
+- **Description**: Prompt text. Use `$ARGUMENTS` for hook input JSON
+
+#### `model`
+
+- **Type**: String
+- **Required**: No
+- **Default**: haiku
+- **Description**: Model to use for evaluation
 
 ---
 
@@ -114,12 +262,25 @@ The `matcher` field is a regex that filters when hooks fire. Omit or use `"*"` t
 
 Available in hook commands:
 
-| Variable | Description | Available in |
-|----------|-------------|--------------|
-| `$CLAUDE_PROJECT_DIR` | Project root directory | All hooks |
-| `${CLAUDE_PLUGIN_ROOT}` | Plugin's root directory | Plugin hooks |
-| `$CLAUDE_ENV_FILE` | Path to persist environment variables | SessionStart only |
-| `$CLAUDE_CODE_REMOTE` | Set to `"true"` in remote web environments | All hooks |
+### `$CLAUDE_PROJECT_DIR`
+
+- **Description**: Project root directory
+- **Available in**: All hooks
+
+### `${CLAUDE_PLUGIN_ROOT}`
+
+- **Description**: Plugin's root directory
+- **Available in**: Plugin hooks
+
+### `$CLAUDE_ENV_FILE`
+
+- **Description**: Path to persist environment variables
+- **Available in**: SessionStart only
+
+### `$CLAUDE_CODE_REMOTE`
+
+- **Description**: Set to `"true"` in remote web environments
+- **Available in**: All hooks
 
 ---
 
@@ -129,105 +290,214 @@ Available in hook commands:
 
 All hooks receive these fields via stdin:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `session_id` | String | Current session identifier |
-| `transcript_path` | String | Path to conversation JSON |
-| `cwd` | String | Current working directory |
-| `permission_mode` | String | `"default"`, `"plan"`, `"acceptEdits"`, `"dontAsk"`, or `"bypassPermissions"` |
-| `hook_event_name` | String | Name of the event that fired |
+#### `session_id`
+
+- **Type**: String
+- **Description**: Current session identifier
+
+#### `transcript_path`
+
+- **Type**: String
+- **Description**: Path to conversation JSON
+
+#### `cwd`
+
+- **Type**: String
+- **Description**: Current working directory
+
+#### `permission_mode`
+
+- **Type**: String
+- **Description**: `"default"`, `"plan"`, `"acceptEdits"`, `"dontAsk"`, or `"bypassPermissions"`
+
+#### `hook_event_name`
+
+- **Type**: String
+- **Description**: Name of the event that fired
 
 ### SessionStart Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `source` | String | `"startup"`, `"resume"`, `"clear"`, or `"compact"` |
-| `model` | String | Model identifier |
-| `agent_type` | String | Agent name if started with `claude --agent <name>` |
+#### `source`
+
+- **Type**: String
+- **Description**: `"startup"`, `"resume"`, `"clear"`, or `"compact"`
+
+#### `model`
+
+- **Type**: String
+- **Description**: Model identifier
+
+#### `agent_type`
+
+- **Type**: String
+- **Description**: Agent name if started with `claude --agent <name>`
 
 ### UserPromptSubmit Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `prompt` | String | Text the user submitted |
+#### `prompt`
+
+- **Type**: String
+- **Description**: Text the user submitted
 
 ### PreToolUse Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `tool_name` | String | Name of the tool |
-| `tool_input` | Object | Tool-specific input parameters |
-| `tool_use_id` | String | Unique identifier for this tool call |
+#### `tool_name`
+
+- **Type**: String
+- **Description**: Name of the tool
+
+#### `tool_input`
+
+- **Type**: Object
+- **Description**: Tool-specific input parameters
+
+#### `tool_use_id`
+
+- **Type**: String
+- **Description**: Unique identifier for this tool call
 
 ### PermissionRequest Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `tool_name` | String | Name of the tool |
-| `tool_input` | Object | Tool-specific input parameters |
-| `permission_suggestions` | Array | "Always allow" options user would see |
+#### `tool_name`
+
+- **Type**: String
+- **Description**: Name of the tool
+
+#### `tool_input`
+
+- **Type**: Object
+- **Description**: Tool-specific input parameters
+
+#### `permission_suggestions`
+
+- **Type**: Array
+- **Description**: "Always allow" options user would see
 
 ### PostToolUse Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `tool_name` | String | Name of the tool |
-| `tool_input` | Object | Tool-specific input parameters |
-| `tool_response` | Object | Result returned by the tool |
-| `tool_use_id` | String | Unique identifier for this tool call |
+#### `tool_name`
+
+- **Type**: String
+- **Description**: Name of the tool
+
+#### `tool_input`
+
+- **Type**: Object
+- **Description**: Tool-specific input parameters
+
+#### `tool_response`
+
+- **Type**: Object
+- **Description**: Result returned by the tool
+
+#### `tool_use_id`
+
+- **Type**: String
+- **Description**: Unique identifier for this tool call
 
 ### PostToolUseFailure Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `tool_name` | String | Name of the tool |
-| `tool_input` | Object | Tool-specific input parameters |
-| `tool_use_id` | String | Unique identifier for this tool call |
-| `error` | String | Error description |
-| `is_interrupt` | Boolean | Whether caused by user interruption |
+#### `tool_name`
+
+- **Type**: String
+- **Description**: Name of the tool
+
+#### `tool_input`
+
+- **Type**: Object
+- **Description**: Tool-specific input parameters
+
+#### `tool_use_id`
+
+- **Type**: String
+- **Description**: Unique identifier for this tool call
+
+#### `error`
+
+- **Type**: String
+- **Description**: Error description
+
+#### `is_interrupt`
+
+- **Type**: Boolean
+- **Description**: Whether caused by user interruption
 
 ### Notification Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `message` | String | Notification text |
-| `title` | String | Optional notification title |
-| `notification_type` | String | Type that triggered the hook |
+#### `message`
+
+- **Type**: String
+- **Description**: Notification text
+
+#### `title`
+
+- **Type**: String
+- **Description**: Optional notification title
+
+#### `notification_type`
+
+- **Type**: String
+- **Description**: Type that triggered the hook
 
 ### SubagentStart Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `agent_id` | String | Unique identifier for the subagent |
-| `agent_type` | String | Agent type name |
+#### `agent_id`
+
+- **Type**: String
+- **Description**: Unique identifier for the subagent
+
+#### `agent_type`
+
+- **Type**: String
+- **Description**: Agent type name
 
 ### SubagentStop Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `stop_hook_active` | Boolean | Whether already continuing from a stop hook |
-| `agent_id` | String | Unique identifier for the subagent |
-| `agent_type` | String | Agent type name |
-| `agent_transcript_path` | String | Path to subagent's transcript |
+#### `stop_hook_active`
+
+- **Type**: Boolean
+- **Description**: Whether already continuing from a stop hook
+
+#### `agent_id`
+
+- **Type**: String
+- **Description**: Unique identifier for the subagent
+
+#### `agent_type`
+
+- **Type**: String
+- **Description**: Agent type name
+
+#### `agent_transcript_path`
+
+- **Type**: String
+- **Description**: Path to subagent's transcript
 
 ### Stop Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `stop_hook_active` | Boolean | Whether already continuing from a stop hook |
+#### `stop_hook_active`
+
+- **Type**: Boolean
+- **Description**: Whether already continuing from a stop hook
 
 ### PreCompact Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `trigger` | String | `"manual"` or `"auto"` |
-| `custom_instructions` | String | User input from `/compact` (empty for auto) |
+#### `trigger`
+
+- **Type**: String
+- **Description**: `"manual"` or `"auto"`
+
+#### `custom_instructions`
+
+- **Type**: String
+- **Description**: User input from `/compact` (empty for auto)
 
 ### SessionEnd Input
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `reason` | String | Why the session ended |
+#### `reason`
+
+- **Type**: String
+- **Description**: Why the session ended
 
 ---
 
@@ -235,105 +505,210 @@ All hooks receive these fields via stdin:
 
 ### Bash
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `command` | String | Shell command to execute |
-| `description` | String | Optional description |
-| `timeout` | Number | Optional timeout in milliseconds |
-| `run_in_background` | Boolean | Whether to run in background |
+#### `command`
+
+- **Type**: String
+- **Description**: Shell command to execute
+
+#### `description`
+
+- **Type**: String
+- **Description**: Optional description
+
+#### `timeout`
+
+- **Type**: Number
+- **Description**: Optional timeout in milliseconds
+
+#### `run_in_background`
+
+- **Type**: Boolean
+- **Description**: Whether to run in background
 
 ### Write
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `file_path` | String | Absolute path to file |
-| `content` | String | Content to write |
+#### `file_path`
+
+- **Type**: String
+- **Description**: Absolute path to file
+
+#### `content`
+
+- **Type**: String
+- **Description**: Content to write
 
 ### Edit
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `file_path` | String | Absolute path to file |
-| `old_string` | String | Text to find and replace |
-| `new_string` | String | Replacement text |
-| `replace_all` | Boolean | Whether to replace all occurrences |
+#### `file_path`
+
+- **Type**: String
+- **Description**: Absolute path to file
+
+#### `old_string`
+
+- **Type**: String
+- **Description**: Text to find and replace
+
+#### `new_string`
+
+- **Type**: String
+- **Description**: Replacement text
+
+#### `replace_all`
+
+- **Type**: Boolean
+- **Description**: Whether to replace all occurrences
 
 ### Read
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `file_path` | String | Absolute path to file |
-| `offset` | Number | Optional line number to start from |
-| `limit` | Number | Optional number of lines to read |
+#### `file_path`
+
+- **Type**: String
+- **Description**: Absolute path to file
+
+#### `offset`
+
+- **Type**: Number
+- **Description**: Optional line number to start from
+
+#### `limit`
+
+- **Type**: Number
+- **Description**: Optional number of lines to read
 
 ### Glob
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `pattern` | String | Glob pattern to match |
-| `path` | String | Optional directory to search |
+#### `pattern`
+
+- **Type**: String
+- **Description**: Glob pattern to match
+
+#### `path`
+
+- **Type**: String
+- **Description**: Optional directory to search
 
 ### Grep
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `pattern` | String | Regex pattern to search |
-| `path` | String | Optional file or directory |
-| `glob` | String | Optional glob filter |
-| `output_mode` | String | `"content"`, `"files_with_matches"`, or `"count"` |
-| `-i` | Boolean | Case insensitive search |
-| `multiline` | Boolean | Enable multiline matching |
+#### `pattern`
+
+- **Type**: String
+- **Description**: Regex pattern to search
+
+#### `path`
+
+- **Type**: String
+- **Description**: Optional file or directory
+
+#### `glob`
+
+- **Type**: String
+- **Description**: Optional glob filter
+
+#### `output_mode`
+
+- **Type**: String
+- **Description**: `"content"`, `"files_with_matches"`, or `"count"`
+
+#### `-i`
+
+- **Type**: Boolean
+- **Description**: Case insensitive search
+
+#### `multiline`
+
+- **Type**: Boolean
+- **Description**: Enable multiline matching
 
 ### WebFetch
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `url` | String | URL to fetch |
-| `prompt` | String | Prompt to run on fetched content |
+#### `url`
+
+- **Type**: String
+- **Description**: URL to fetch
+
+#### `prompt`
+
+- **Type**: String
+- **Description**: Prompt to run on fetched content
 
 ### WebSearch
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `query` | String | Search query |
-| `allowed_domains` | Array | Optional: only include these domains |
-| `blocked_domains` | Array | Optional: exclude these domains |
+#### `query`
+
+- **Type**: String
+- **Description**: Search query
+
+#### `allowed_domains`
+
+- **Type**: Array
+- **Description**: Optional: only include these domains
+
+#### `blocked_domains`
+
+- **Type**: Array
+- **Description**: Optional: exclude these domains
 
 ### Task
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `prompt` | String | Task for the agent |
-| `description` | String | Short description |
-| `subagent_type` | String | Type of agent to use |
-| `model` | String | Optional model override |
+#### `prompt`
+
+- **Type**: String
+- **Description**: Task for the agent
+
+#### `description`
+
+- **Type**: String
+- **Description**: Short description
+
+#### `subagent_type`
+
+- **Type**: String
+- **Description**: Type of agent to use
+
+#### `model`
+
+- **Type**: String
+- **Description**: Optional model override
 
 ---
 
 ## Exit Code Behavior
 
-| Exit Code | Meaning | Effect |
-|-----------|---------|--------|
-| 0 | Success | Proceed; parse stdout for JSON |
-| 2 | Blocking error | Block action; stderr shown as error |
-| Other | Non-blocking error | Continue; stderr shown in verbose mode |
+### Exit Code 0
+
+- **Meaning**: Success
+- **Effect**: Proceed; parse stdout for JSON
+
+### Exit Code 2
+
+- **Meaning**: Blocking error
+- **Effect**: Block action; stderr shown as error
+
+### Other Exit Codes
+
+- **Meaning**: Non-blocking error
+- **Effect**: Continue; stderr shown in verbose mode
 
 ### Exit Code 2 Behavior by Event
 
-| Event | Effect of exit 2 |
-|-------|------------------|
-| `PreToolUse` | Blocks the tool call |
-| `PermissionRequest` | Denies the permission |
-| `UserPromptSubmit` | Blocks and erases prompt |
-| `Stop` | Prevents stopping, continues conversation |
-| `SubagentStop` | Prevents subagent from stopping |
-| `PostToolUse` | Shows stderr to Claude (tool already ran) |
-| `PostToolUseFailure` | Shows stderr to Claude |
-| `Notification` | Shows stderr to user only |
-| `SubagentStart` | Shows stderr to user only |
-| `SessionStart` | Shows stderr to user only |
-| `SessionEnd` | Shows stderr to user only |
-| `PreCompact` | Shows stderr to user only |
+#### Events that CAN block
+
+- `PreToolUse` - Blocks the tool call
+- `PermissionRequest` - Denies the permission
+- `UserPromptSubmit` - Blocks and erases prompt
+- `Stop` - Prevents stopping, continues conversation
+- `SubagentStop` - Prevents subagent from stopping
+
+#### Events that CANNOT block
+
+- `PostToolUse` - Shows stderr to Claude (tool already ran)
+- `PostToolUseFailure` - Shows stderr to Claude
+- `Notification` - Shows stderr to user only
+- `SubagentStart` - Shows stderr to user only
+- `SessionStart` - Shows stderr to user only
+- `SessionEnd` - Shows stderr to user only
+- `PreCompact` - Shows stderr to user only
 
 ---
 
@@ -343,90 +718,178 @@ All hooks receive these fields via stdin:
 
 Available to all hooks:
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `continue` | Boolean | `true` | If `false`, Claude stops entirely |
-| `stopReason` | String | - | Message shown to user when `continue` is `false` |
-| `suppressOutput` | Boolean | `false` | Hide stdout from verbose mode |
-| `systemMessage` | String | - | Warning message shown to user |
+#### `continue`
+
+- **Type**: Boolean
+- **Default**: `true`
+- **Description**: If `false`, Claude stops entirely
+
+#### `stopReason`
+
+- **Type**: String
+- **Description**: Message shown to user when `continue` is `false`
+
+#### `suppressOutput`
+
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Hide stdout from verbose mode
+
+#### `systemMessage`
+
+- **Type**: String
+- **Description**: Warning message shown to user
 
 ### Decision Control by Event
 
-| Event | Decision pattern | Key fields |
-|-------|-----------------|------------|
-| `UserPromptSubmit`, `PostToolUse`, `PostToolUseFailure`, `Stop`, `SubagentStop` | Top-level `decision` | `decision: "block"`, `reason` |
-| `PreToolUse` | `hookSpecificOutput` | `permissionDecision`, `permissionDecisionReason`, `updatedInput` |
-| `PermissionRequest` | `hookSpecificOutput` | `decision.behavior`, `decision.updatedInput` |
+#### Top-level `decision` pattern
+
+Used by: `UserPromptSubmit`, `PostToolUse`, `PostToolUseFailure`, `Stop`, `SubagentStop`
+
+- Key fields: `decision: "block"`, `reason`
+
+#### `hookSpecificOutput` pattern for PreToolUse
+
+- Key fields: `permissionDecision`, `permissionDecisionReason`, `updatedInput`
+
+#### `hookSpecificOutput` pattern for PermissionRequest
+
+- Key fields: `decision.behavior`, `decision.updatedInput`
 
 ### SessionStart Output
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `additionalContext` | String | Context added for Claude |
+#### `additionalContext`
+
+- **Type**: String
+- **Description**: Context added for Claude
 
 ### UserPromptSubmit Output
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `decision` | String | `"block"` to prevent processing |
-| `reason` | String | Shown to user when blocked |
-| `additionalContext` | String | Context added for Claude |
+#### `decision`
+
+- **Type**: String
+- **Description**: `"block"` to prevent processing
+
+#### `reason`
+
+- **Type**: String
+- **Description**: Shown to user when blocked
+
+#### `additionalContext`
+
+- **Type**: String
+- **Description**: Context added for Claude
 
 ### PreToolUse Output
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `permissionDecision` | String | `"allow"`, `"deny"`, or `"ask"` |
-| `permissionDecisionReason` | String | Reason shown to user/Claude |
-| `updatedInput` | Object | Modified tool input parameters |
-| `additionalContext` | String | Context added for Claude |
+#### `permissionDecision`
+
+- **Type**: String
+- **Description**: `"allow"`, `"deny"`, or `"ask"`
+
+#### `permissionDecisionReason`
+
+- **Type**: String
+- **Description**: Reason shown to user/Claude
+
+#### `updatedInput`
+
+- **Type**: Object
+- **Description**: Modified tool input parameters
+
+#### `additionalContext`
+
+- **Type**: String
+- **Description**: Context added for Claude
 
 ### PermissionRequest Output
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `decision.behavior` | String | `"allow"` or `"deny"` |
-| `decision.updatedInput` | Object | Modified tool input (allow only) |
-| `decision.updatedPermissions` | Array | Permission rules to apply (allow only) |
-| `decision.message` | String | Reason for deny |
-| `decision.interrupt` | Boolean | Stop Claude on deny |
+#### `decision.behavior`
+
+- **Type**: String
+- **Description**: `"allow"` or `"deny"`
+
+#### `decision.updatedInput`
+
+- **Type**: Object
+- **Description**: Modified tool input (allow only)
+
+#### `decision.updatedPermissions`
+
+- **Type**: Array
+- **Description**: Permission rules to apply (allow only)
+
+#### `decision.message`
+
+- **Type**: String
+- **Description**: Reason for deny
+
+#### `decision.interrupt`
+
+- **Type**: Boolean
+- **Description**: Stop Claude on deny
 
 ### PostToolUse Output
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `decision` | String | `"block"` to prompt Claude with reason |
-| `reason` | String | Explanation for Claude |
-| `additionalContext` | String | Additional context for Claude |
-| `updatedMCPToolOutput` | Any | Replace MCP tool output |
+#### `decision`
+
+- **Type**: String
+- **Description**: `"block"` to prompt Claude with reason
+
+#### `reason`
+
+- **Type**: String
+- **Description**: Explanation for Claude
+
+#### `additionalContext`
+
+- **Type**: String
+- **Description**: Additional context for Claude
+
+#### `updatedMCPToolOutput`
+
+- **Type**: Any
+- **Description**: Replace MCP tool output
 
 ### PostToolUseFailure Output
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `additionalContext` | String | Context about the failure |
+#### `additionalContext`
+
+- **Type**: String
+- **Description**: Context about the failure
 
 ### SubagentStart Output
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `additionalContext` | String | Context for the subagent |
+#### `additionalContext`
+
+- **Type**: String
+- **Description**: Context for the subagent
 
 ### Stop / SubagentStop Output
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `decision` | String | `"block"` to prevent stopping |
-| `reason` | String | Required when blocking; tells Claude why to continue |
+#### `decision`
+
+- **Type**: String
+- **Description**: `"block"` to prevent stopping
+
+#### `reason`
+
+- **Type**: String
+- **Description**: Required when blocking; tells Claude why to continue
 
 ### Prompt/Agent Hook Response
 
 Must return:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `ok` | Boolean | `true` to allow, `false` to block |
-| `reason` | String | Required when `ok` is `false` |
+#### `ok`
+
+- **Type**: Boolean
+- **Description**: `true` to allow, `false` to block
+
+#### `reason`
+
+- **Type**: String
+- **Description**: Required when `ok` is `false`
 
 ---
 
