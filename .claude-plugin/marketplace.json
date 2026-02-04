@@ -1,17 +1,13 @@
 {
   "name": "metaskills-marketplace",
   "owner": {
-    "name": "Mikey Anderson",
-    "url": "https://github.com/miikeyanderson"
+    "name": "Mikey Anderson"
   },
   "plugins": [
     {
       "name": "metaskills",
-      "description": "Skills for productivity, TDD, task management, and workflow automation",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/miikeyanderson/metaskills"
-      }
+      "source": ".",
+      "description": "Skills for productivity, TDD, task management, and workflow automation"
     }
   ]
 }
