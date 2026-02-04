@@ -1,0 +1,9 @@
+{
+  "name": "metaskills",
+  "description": "A collection of Claude Code skills for productivity, TDD, task management, and workflow automation",
+  "version": "1.0.0",
+  "author": {
+    "name": "Mikey Anderson"
+  },
+  "repository": "https://github.com/mikeyanderson/metaskills"
+}
