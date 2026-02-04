@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "metaskills",
-      "source": ".",
+      "source": "./",
       "description": "Skills for productivity, TDD, task management, and workflow automation"
     }
   ]
