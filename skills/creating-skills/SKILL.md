@@ -141,15 +141,15 @@ allowed-tools: Bash(gh *)
 
 ## Current PR context
 
-- PR diff: !`gh pr diff`
-- Comments: !`gh pr view --comments`
-- Changed files: !`gh pr diff --name-only`
+- PR diff: !\`gh pr diff\`
+- Comments: !\`gh pr view --comments\`
+- Changed files: !\`gh pr diff --name-only\`
 
 Summarize this PR.
 ```
 
 **Key options:**
-- `!`command`` syntax - executes shell commands BEFORE Claude sees the skill
+- `!\`command\`` syntax - executes shell commands BEFORE Claude sees the skill
 - Output replaces the placeholder - Claude receives actual data
 
 **Security for dynamic injection:**
@@ -160,8 +160,8 @@ Summarize this PR.
 
 ```yaml
 # Safe pattern with fallback
-- PR diff: !`gh pr diff 2>/dev/null || echo "No PR context available"`
-- Recent commits: !`git log --oneline -5 2>/dev/null || echo "Not a git repo"`
+- PR diff: !\`gh pr diff 2>/dev/null || echo "No PR context available"\`
+- Recent commits: !\`git log --oneline -5 2>/dev/null || echo "Not a git repo"\`
 ```
 
 ### Skills with Lifecycle Hooks
@@ -208,7 +208,7 @@ Ask these questions when creating a skill:
 - Use `$ARGUMENTS` or `$0`, `$1` in content
 
 **5. Does it need current data?**
-- Yes → Use `!`command`` for dynamic injection
+- Yes → Use `!\`command\`` for dynamic injection
 
 **6. Should users see it in the menu?**
 - No (background knowledge) → Add `user-invocable: false`
@@ -258,7 +258,7 @@ Table or bullets for scanning
 
 ## Implementation
 Use $ARGUMENTS for user input
-Use !`command` for dynamic data
+Use !\`command\` for dynamic data
 
 ## Common Mistakes
 What goes wrong + fixes
@@ -448,7 +448,7 @@ Full robustness for shared/critical skills:
 - [ ] `context: fork` for isolated execution
 - [ ] `allowed-tools` scoped to minimum required
 - [ ] `argument-hint` if skill accepts input
-- [ ] Safe `!`command`` patterns with fallbacks
+- [ ] Safe `!\`command\`` patterns with fallbacks
 - [ ] `hooks` for validation/automation
 
 **Quality:**
@@ -479,7 +479,7 @@ Using only `name` and `description` when `context: fork`, `allowed-tools`, or `d
 Deploy, commit, send message skills MUST have `disable-model-invocation: true`.
 
 ### ❌ Hardcoding Data That Changes
-Use `!`git status`` instead of describing "current state".
+Use `!\`git status\`` instead of describing "current state".
 
 ### ❌ Not Using Arguments
 If skill should accept input, use `argument-hint` and `$ARGUMENTS`.
@@ -503,7 +503,7 @@ Skill A requires Skill B which requires Skill A. Map dependencies before creatin
 Testing happy path once and calling it done. Run negative tests, ambiguity tests, and environment tests.
 
 ### ❌ Unsafe Dynamic Injection
-Using `!`command`` without considering: What if command fails? What if output is huge? What if it contains sensitive data? Add fallbacks and sanitization.
+Using `!\`command\`` without considering: What if command fails? What if output is huge? What if it contains sensitive data? Add fallbacks and sanitization.
 
 ## Related resources
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# SessionStart hook - injects skills + tasks guidance at session start
+# SessionStart hook for metaskills plugin
+# Injects mandatory protocol at session start
 
 set -euo pipefail
 
@@ -7,39 +8,6 @@ set -euo pipefail
 ORANGE='\033[38;5;208m'
 RESET='\033[0m'
 STATUS_MSG='✻ metaskills loaded...'
-
-# Determine plugin root directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-
-using_skills_file="${PLUGIN_ROOT}/skills/using-skills/SKILL.md"
-using_tasks_file="${PLUGIN_ROOT}/skills/using-tasks/SKILL.md"
-
-# compact|full (set GUIDANCE_MODE=full if you want full SKILL.md bodies)
-GUIDANCE_MODE="${GUIDANCE_MODE:-compact}"
-
-read_guidance() {
-    local file="$1"
-    local label="$2"
-
-    if [[ ! -f "$file" ]]; then
-        printf 'Error reading %s skill: %s\n' "$label" "$file"
-        return 0
-    fi
-
-    if [[ "$GUIDANCE_MODE" == "full" ]]; then
-        cat "$file"
-        return 0
-    fi
-
-    # Compact mode: include high-priority block + "The Rule" section only.
-    awk '
-        /^<EXTREMELY-IMPORTANT>/, /^<\/EXTREMELY-IMPORTANT>/ { print; next }
-        /^## The Rule$/ { in_rule=1; print; next }
-        in_rule && /^## / { exit }
-        in_rule { print }
-    ' "$file"
-}
 
 # Escape outputs for JSON using pure bash
 escape_for_json() {
@@ -60,27 +28,57 @@ escape_for_json() {
     printf '%s' "$output"
 }
 
-using_skills_content="$(read_guidance "$using_skills_file" "using-skills")"
-using_tasks_content="$(read_guidance "$using_tasks_file" "using-tasks")"
+# SHORT VARIANT - Tight protocol for session start (~1.5k chars)
+protocol="SESSION START PROTOCOL (MANDATORY)
 
-using_skills_escaped="$(escape_for_json "$using_skills_content")"
-using_tasks_escaped="$(escape_for_json "$using_tasks_content")"
+You MUST execute this sequence on every substantive request. No shortcuts.
 
-custom_message="✻ You have enhanced capabilities in this workspace.
+1) GATE A — TASK PLAN (BLOCKING)
+- Decompose the user request into atomic tasks.
+- Create each task with TaskCreate (subject, description, activeForm).
+- Set exactly one task to in_progress via TaskUpdate.
+- All other not-started tasks remain pending.
+- SKIP ONLY IF: Request is trivially atomic (single action, no follow-up).
 
-Operational order (follow strictly):
-1) Skills workflow first (determine HOW to do the task)
-2) Tasks workflow second (track execution for multi-step work)
+2) GATE B — SKILL TRIGGER CHECK (BLOCKING)
+- Evaluate request against skill triggers BEFORE execution:
+  • production code → metaskills:tdd
+  • create/edit skills → metaskills:creating-skills
+  • create/edit hooks → metaskills:creating-hooks
+  • git commit → metaskills:commit
+  • session handoff/summary → metaskills:distill
+  • high-stakes decision, architecture, second opinion → codex-mcp / gemini-mcp
+- If a trigger matches, invoke Skill tool first, then execute.
+- If a matched skill is NOT used, you MUST state: \"Skill skip reason: [skill] not invoked because [reason].\"
 
-If both apply, use both."
+EXECUTION RULES
+- Start task: TaskUpdate → in_progress
+- Finish task: TaskUpdate → completed (only after verification)
+- Keep exactly ONE in_progress task at a time
+- Use TaskList after each completion to select next task
+- Use TaskGet when details are ambiguous; do not assume
 
-custom_escaped="$(escape_for_json "$custom_message")"
+FALLBACK (NO BYPASS)
+- If blocked, create a blocker task describing the dependency.
+- Do not bypass protocol. Do not silently skip tools/skills.
+- No \"best effort\" language. No rationalization.
 
+PROHIBITED THOUGHTS
+- \"I can do this quickly without tasks.\"
+- \"This is obvious, no need to call the skill.\"
+- \"I'll update tasks at the end.\"
+- \"I skipped the skill to save time.\"
+
+For detailed guidance, invoke: Skill(metaskills:using-tasks) or Skill(metaskills:using-skills)"
+
+protocol_escaped=$(escape_for_json "$protocol")
+
+# Output context injection as JSON
 cat <<EOF
 {
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "<EXTREMELY_IMPORTANT>\n${custom_escaped}\n\n## USING-SKILLS GUIDANCE\n${using_skills_escaped}\n\n## USING-TASKS GUIDANCE\n${using_tasks_escaped}\n</EXTREMELY_IMPORTANT>"
+    "additionalContext": "<EXTREMELY_IMPORTANT>\n${protocol_escaped}\n</EXTREMELY_IMPORTANT>"
   }
 }
 EOF
