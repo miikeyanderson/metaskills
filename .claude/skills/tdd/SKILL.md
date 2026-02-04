@@ -1,5 +1,5 @@
 ---
-name: test-driven-development
+name: tdd
 description: Use when implementing new features, fixing bugs, or writing any production code
 ---
 
